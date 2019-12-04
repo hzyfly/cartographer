@@ -22,8 +22,10 @@
 #include <vector>
 
 #include "Eigen/Core"
+#include "absl/container/flat_hash_set.h"
 #include "cartographer/common/time.h"
 #include "cartographer/io/color.h"
+#include "cartographer/sensor/point_cloud.h"
 
 namespace cartographer {
 namespace io {
@@ -36,8 +38,8 @@ struct PointsBatch {
     trajectory_id = 0;
   }
 
-  // Time at which this batch has been acquired.
-  common::Time time;
+  // Time at which the first point of this batch has been acquired.
+  common::Time start_time;
 
   // Origin of the data, i.e. the location of the sensor in the world at
   // 'time'.
@@ -45,13 +47,13 @@ struct PointsBatch {
 
   // Sensor that generated this data's 'frame_id' or empty if this information
   // is unknown.
-  string frame_id;
+  std::string frame_id;
 
   // Trajectory ID that produced this point.
   int trajectory_id;
 
-  // Geometry of the points in a metric frame.
-  std::vector<Eigen::Vector3f> points;
+  // Geometry of the points in the map frame.
+  sensor::PointCloud points;
 
   // Intensities are optional and may be unspecified. The meaning of these
   // intensity values varies by device. For example, the VLP16 provides values
@@ -65,7 +67,7 @@ struct PointsBatch {
 };
 
 // Removes the indices in 'to_remove' from 'batch'.
-void RemovePoints(std::vector<int> to_remove, PointsBatch* batch);
+void RemovePoints(absl::flat_hash_set<int> to_remove, PointsBatch* batch);
 
 }  // namespace io
 }  // namespace cartographer

@@ -26,17 +26,38 @@ PointCloud TransformPointCloud(const PointCloud& point_cloud,
                                const transform::Rigid3f& transform) {
   PointCloud result;
   result.reserve(point_cloud.size());
-  for (const Eigen::Vector3f& point : point_cloud) {
+  for (const RangefinderPoint& point : point_cloud) {
     result.emplace_back(transform * point);
   }
   return result;
 }
 
-PointCloud Crop(const PointCloud& point_cloud, const float min_z,
-                const float max_z) {
+TimedPointCloud TransformTimedPointCloud(const TimedPointCloud& point_cloud,
+                                         const transform::Rigid3f& transform) {
+  TimedPointCloud result;
+  result.reserve(point_cloud.size());
+  for (const TimedRangefinderPoint& point : point_cloud) {
+    result.push_back(transform * point);
+  }
+  return result;
+}
+
+PointCloud CropPointCloud(const PointCloud& point_cloud, const float min_z,
+                          const float max_z) {
   PointCloud cropped_point_cloud;
-  for (const auto& point : point_cloud) {
-    if (min_z <= point.z() && point.z() <= max_z) {
+  for (const RangefinderPoint& point : point_cloud) {
+    if (min_z <= point.position.z() && point.position.z() <= max_z) {
+      cropped_point_cloud.push_back(point);
+    }
+  }
+  return cropped_point_cloud;
+}
+
+TimedPointCloud CropTimedPointCloud(const TimedPointCloud& point_cloud,
+                                    const float min_z, const float max_z) {
+  TimedPointCloud cropped_point_cloud;
+  for (const TimedRangefinderPoint& point : point_cloud) {
+    if (min_z <= point.position.z() && point.position.z() <= max_z) {
       cropped_point_cloud.push_back(point);
     }
   }

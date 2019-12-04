@@ -24,8 +24,8 @@
 namespace cartographer {
 namespace mapping {
 
-proto::TrajectoryNode ToProto(const TrajectoryNode::Data& constant_data) {
-  proto::TrajectoryNode proto;
+proto::TrajectoryNodeData ToProto(const TrajectoryNode::Data& constant_data) {
+  proto::TrajectoryNodeData proto;
   proto.set_timestamp(common::ToUniversal(constant_data.time));
   *proto.mutable_gravity_alignment() =
       transform::ToProto(constant_data.gravity_alignment);
@@ -44,10 +44,11 @@ proto::TrajectoryNode ToProto(const TrajectoryNode::Data& constant_data) {
     proto.add_rotational_scan_matcher_histogram(
         constant_data.rotational_scan_matcher_histogram(i));
   }
+  *proto.mutable_local_pose() = transform::ToProto(constant_data.local_pose);
   return proto;
 }
 
-TrajectoryNode::Data FromProto(const proto::TrajectoryNode& proto) {
+TrajectoryNode::Data FromProto(const proto::TrajectoryNodeData& proto) {
   Eigen::VectorXf rotational_scan_matcher_histogram(
       proto.rotational_scan_matcher_histogram_size());
   for (int i = 0; i != proto.rotational_scan_matcher_histogram_size(); ++i) {
@@ -63,7 +64,8 @@ TrajectoryNode::Data FromProto(const proto::TrajectoryNode& proto) {
           .Decompress(),
       sensor::CompressedPointCloud(proto.low_resolution_point_cloud())
           .Decompress(),
-      rotational_scan_matcher_histogram};
+      rotational_scan_matcher_histogram,
+      transform::ToRigid3(proto.local_pose())};
 }
 
 }  // namespace mapping

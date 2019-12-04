@@ -16,10 +16,11 @@
 
 #include "cartographer/io/points_processor_pipeline_builder.h"
 
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/io/coloring_points_processor.h"
 #include "cartographer/io/counting_points_processor.h"
 #include "cartographer/io/fixed_ratio_sampling_points_processor.h"
+#include "cartographer/io/frame_id_filtering_points_processor.h"
 #include "cartographer/io/hybrid_grid_points_processor.h"
 #include "cartographer/io/intensity_to_color_points_processor.h"
 #include "cartographer/io/min_max_range_filtering_points_processor.h"
@@ -81,6 +82,7 @@ void RegisterBuiltInPointsProcessors(
     PointsProcessorPipelineBuilder* builder) {
   RegisterPlainPointsProcessor<CountingPointsProcessor>(builder);
   RegisterPlainPointsProcessor<FixedRatioSamplingPointsProcessor>(builder);
+  RegisterPlainPointsProcessor<FrameIdFilteringPointsProcessor>(builder);
   RegisterPlainPointsProcessor<MinMaxRangeFiteringPointsProcessor>(builder);
   RegisterPlainPointsProcessor<OutlierRemovingPointsProcessor>(builder);
   RegisterPlainPointsProcessor<ColoringPointsProcessor>(builder);
@@ -116,14 +118,14 @@ PointsProcessorPipelineBuilder::CreatePipeline(
   // The last consumer in the pipeline must exist, so that the one created after
   // it (and being before it in the pipeline) has a valid 'next' to point to.
   // The last consumer will just drop all points.
-  pipeline.emplace_back(common::make_unique<NullPointsProcessor>());
+  pipeline.emplace_back(absl::make_unique<NullPointsProcessor>());
 
   std::vector<std::unique_ptr<common::LuaParameterDictionary>> configurations =
       dictionary->GetArrayValuesAsDictionaries();
 
   // We construct the pipeline starting at the back.
   for (auto it = configurations.rbegin(); it != configurations.rend(); it++) {
-    const string action = (*it)->GetString("action");
+    const std::string action = (*it)->GetString("action");
     auto factory_it = factories_.find(action);
     CHECK(factory_it != factories_.end())
         << "Unknown action '" << action

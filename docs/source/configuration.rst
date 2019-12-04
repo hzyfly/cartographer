@@ -33,70 +33,8 @@ int32 num_threads
   Not yet documented.
 
 
-cartographer.mapping.proto.MapBuilderOptions
-============================================
-
-bool use_trajectory_builder_2d
-  Not yet documented.
-
-bool use_trajectory_builder_3d
-  Not yet documented.
-
-int32 num_background_threads
-  Number of threads to use for background computations.
-
-cartographer.mapping.proto.SparsePoseGraphOptions sparse_pose_graph_options
-  Not yet documented.
-
-
-cartographer.mapping.proto.SparsePoseGraphOptions
-=================================================
-
-int32 optimize_every_n_scans
-  Online loop closure: If positive, will run the loop closure while the map
-  is built.
-
-cartographer.mapping.sparse_pose_graph.proto.ConstraintBuilderOptions constraint_builder_options
-  Options for the constraint builder.
-
-double matcher_translation_weight
-  Weight used in the optimization problem for the translational component of
-  non-loop-closure scan matcher constraints.
-
-double matcher_rotation_weight
-  Weight used in the optimization problem for the rotational component of
-  non-loop-closure scan matcher constraints.
-
-cartographer.mapping.sparse_pose_graph.proto.OptimizationProblemOptions optimization_problem_options
-  Options for the optimization problem.
-
-int32 max_num_final_iterations
-  Number of iterations to use in 'optimization_problem_options' for the final
-  optimization.
-
-double global_sampling_ratio
-  Rate at which we sample a single trajectory's scans for global
-  localization.
-
-bool log_residual_histograms
-  Whether to output histograms for the pose residuals.
-
-
-cartographer.mapping.proto.TrajectoryBuilderOptions
-===================================================
-
-cartographer.mapping_2d.proto.LocalTrajectoryBuilderOptions trajectory_builder_2d_options
-  Not yet documented.
-
-cartographer.mapping_3d.proto.LocalTrajectoryBuilderOptions trajectory_builder_3d_options
-  Not yet documented.
-
-bool pure_localization
-  Not yet documented.
-
-
-cartographer.mapping.sparse_pose_graph.proto.ConstraintBuilderOptions
-=====================================================================
+cartographer.mapping.pose_graph.proto.ConstraintBuilderOptions
+==============================================================
 
 double sampling_ratio
   A constraint will be added if the proportion of added constraints to
@@ -136,8 +74,8 @@ cartographer.mapping_3d.scan_matching.proto.CeresScanMatcherOptions ceres_scan_m
   Not yet documented.
 
 
-cartographer.mapping.sparse_pose_graph.proto.OptimizationProblemOptions
-=======================================================================
+cartographer.mapping.pose_graph.proto.OptimizationProblemOptions
+================================================================
 
 double huber_scale
   Scaling parameter for Huber loss function.
@@ -148,11 +86,17 @@ double acceleration_weight
 double rotation_weight
   Scaling parameter for the IMU rotation term.
 
-double consecutive_scan_translation_penalty_factor
-  Penalty factors for translation changes to the relative pose between consecutive scans.
+double local_slam_pose_translation_weight
+  Scaling parameter for translation between consecutive nodes based on the local SLAM pose.
 
-double consecutive_scan_rotation_penalty_factor
-  Penalty factors for rotation changes to the relative pose between consecutive scans.
+double local_slam_pose_rotation_weight
+  Scaling parameter for rotation between consecutive nodes based on the local SLAM pose.
+
+double odometry_translation_weight
+  Scaling parameter for translation between consecutive nodes based on the odometry.
+
+double odometry_rotation_weight
+  Scaling parameter for rotation between consecutive nodes based on the odometry.
 
 double fixed_frame_pose_translation_weight
   Scaling parameter for the FixedFramePose translation.
@@ -164,6 +108,86 @@ bool log_solver_summary
   If true, the Ceres solver summary will be logged for every optimization.
 
 cartographer.common.proto.CeresSolverOptions ceres_solver_options
+  Not yet documented.
+
+
+cartographer.mapping.proto.MapBuilderOptions
+============================================
+
+bool use_trajectory_builder_2d
+  Not yet documented.
+
+bool use_trajectory_builder_3d
+  Not yet documented.
+
+int32 num_background_threads
+  Number of threads to use for background computations.
+
+cartographer.mapping.proto.PoseGraphOptions pose_graph_options
+  Not yet documented.
+
+
+cartographer.mapping.proto.MotionFilterOptions
+==============================================
+
+double max_time_seconds
+  Threshold above which range data is inserted based on time.
+
+double max_distance_meters
+  Threshold above which range data is inserted based on linear motion.
+
+double max_angle_radians
+  Threshold above which range data is inserted based on rotational motion.
+
+
+cartographer.mapping.proto.PoseGraphOptions
+===========================================
+
+int32 optimize_every_n_nodes
+  Online loop closure: If positive, will run the loop closure while the map
+  is built.
+
+cartographer.mapping.pose_graph.proto.ConstraintBuilderOptions constraint_builder_options
+  Options for the constraint builder.
+
+double matcher_translation_weight
+  Weight used in the optimization problem for the translational component of
+  non-loop-closure scan matcher constraints.
+
+double matcher_rotation_weight
+  Weight used in the optimization problem for the rotational component of
+  non-loop-closure scan matcher constraints.
+
+cartographer.mapping.pose_graph.proto.OptimizationProblemOptions optimization_problem_options
+  Options for the optimization problem.
+
+int32 max_num_final_iterations
+  Number of iterations to use in 'optimization_problem_options' for the final
+  optimization.
+
+double global_sampling_ratio
+  Rate at which we sample a single trajectory's nodes for global
+  localization.
+
+bool log_residual_histograms
+  Whether to output histograms for the pose residuals.
+
+double global_constraint_search_after_n_seconds
+  If for the duration specified by this option no global contraint has been
+  added between two trajectories, loop closure searches will be performed
+  globally rather than in a smaller search window.
+
+
+cartographer.mapping.proto.TrajectoryBuilderOptions
+===================================================
+
+cartographer.mapping_2d.proto.LocalTrajectoryBuilderOptions trajectory_builder_2d_options
+  Not yet documented.
+
+cartographer.mapping_3d.proto.LocalTrajectoryBuilderOptions trajectory_builder_3d_options
+  Not yet documented.
+
+bool pure_localization
   Not yet documented.
 
 
@@ -185,9 +209,9 @@ float max_z
 float missing_data_ray_length
   Points beyond 'max_range' will be inserted with this length as empty space.
 
-int32 scans_per_accumulation
-  Number of scans to accumulate into one unwarped, combined scan to use for
-  scan matching.
+int32 num_accumulated_range_data
+  Number of range data to accumulate into one unwarped, combined range data
+  to use for scan matching.
 
 float voxel_filter_size
   Voxel filter that gets applied to the range data immediately after
@@ -210,7 +234,7 @@ cartographer.mapping_2d.scan_matching.proto.RealTimeCorrelativeScanMatcherOption
 cartographer.mapping_2d.scan_matching.proto.CeresScanMatcherOptions ceres_scan_matcher_options
   Not yet documented.
 
-cartographer.mapping_3d.proto.MotionFilterOptions motion_filter_options
+cartographer.mapping.proto.MotionFilterOptions motion_filter_options
   Not yet documented.
 
 double imu_gravity_time_constant
@@ -251,9 +275,9 @@ double resolution
   Resolution of the map in meters.
 
 int32 num_range_data
-  Number of scans before adding a new submap. Each submap will get twice the
-  number of scans inserted: First for initialization without being matched
-  against, then while being matched.
+  Number of range data before adding a new submap. Each submap will get twice
+  the number of range data inserted: First for initialization without being
+  matched against, then while being matched.
 
 cartographer.mapping_2d.proto.RangeDataInserterOptions range_data_inserter_options
   Not yet documented.
@@ -318,9 +342,9 @@ float min_range
 float max_range
   Not yet documented.
 
-int32 scans_per_accumulation
-  Number of scans to accumulate into one unwarped, combined scan to use for
-  scan matching.
+int32 num_accumulated_range_data
+  Number of range data to accumulate into one unwarped, combined range data
+  to use for scan matching.
 
 float voxel_filter_size
   Voxel filter that gets applied to the range data immediately after
@@ -342,7 +366,7 @@ cartographer.mapping_2d.scan_matching.proto.RealTimeCorrelativeScanMatcherOption
 cartographer.mapping_3d.scan_matching.proto.CeresScanMatcherOptions ceres_scan_matcher_options
   Not yet documented.
 
-cartographer.mapping_3d.proto.MotionFilterOptions motion_filter_options
+cartographer.mapping.proto.MotionFilterOptions motion_filter_options
   Not yet documented.
 
 double imu_gravity_time_constant
@@ -353,21 +377,11 @@ double imu_gravity_time_constant
   2. from integration of angular velocities (which gets worse when the
   constant is increased) is balanced.
 
+int32 rotational_histogram_size
+  Number of histogram buckets for the rotational scan matcher.
+
 cartographer.mapping_3d.proto.SubmapsOptions submaps_options
   Not yet documented.
-
-
-cartographer.mapping_3d.proto.MotionFilterOptions
-=================================================
-
-double max_time_seconds
-  Threshold above which a new scan is inserted based on time.
-
-double max_distance_meters
-  Threshold above which a new scan is inserted based on linear motion.
-
-double max_angle_radians
-  Threshold above which a new scan is inserted based on rotational motion.
 
 
 cartographer.mapping_3d.proto.RangeDataInserterOptions
@@ -402,9 +416,9 @@ double low_resolution
   local SLAM only.
 
 int32 num_range_data
-  Number of scans before adding a new submap. Each submap will get twice the
-  number of scans inserted: First for initialization without being matched
-  against, then while being matched.
+  Number of range data before adding a new submap. Each submap will get twice
+  the number of range data inserted: First for initialization without being
+  matched against, then while being matched.
 
 cartographer.mapping_3d.proto.RangeDataInserterOptions range_data_inserter_options
   Not yet documented.
@@ -413,8 +427,11 @@ cartographer.mapping_3d.proto.RangeDataInserterOptions range_data_inserter_optio
 cartographer.mapping_3d.scan_matching.proto.CeresScanMatcherOptions
 ===================================================================
 
-double translation_weight
+double occupied_space_weight
   Scaling parameters for each cost functor.
+
+double translation_weight
+  Not yet documented.
 
 double rotation_weight
   Not yet documented.
@@ -436,9 +453,6 @@ int32 branch_and_bound_depth
 int32 full_resolution_depth
   Number of full resolution grids to use, additional grids will reduce the
   resolution by half each.
-
-int32 rotational_histogram_size
-  Number of histogram buckets for the rotational scan matcher.
 
 double min_rotational_score
   Minimum score for the rotational scan matcher.

@@ -21,13 +21,25 @@
 #include <vector>
 
 #include "Eigen/Core"
+#include "absl/types/optional.h"
 #include "cartographer/common/time.h"
-#include "cartographer/mapping/proto/trajectory_node.pb.h"
+#include "cartographer/mapping/proto/trajectory_node_data.pb.h"
 #include "cartographer/sensor/range_data.h"
 #include "cartographer/transform/rigid_transform.h"
 
 namespace cartographer {
 namespace mapping {
+
+struct TrajectoryNodePose {
+  struct ConstantPoseData {
+    common::Time time;
+    transform::Rigid3d local_pose;
+  };
+  // The node pose in the global SLAM frame.
+  transform::Rigid3d global_pose;
+
+  absl::optional<ConstantPoseData> constant_pose_data;
+};
 
 struct TrajectoryNode {
   struct Data {
@@ -45,20 +57,23 @@ struct TrajectoryNode {
     sensor::PointCloud high_resolution_point_cloud;
     sensor::PointCloud low_resolution_point_cloud;
     Eigen::VectorXf rotational_scan_matcher_histogram;
+
+    // The node pose in the local SLAM frame.
+    transform::Rigid3d local_pose;
   };
 
   common::Time time() const { return constant_data->time; }
-  bool trimmed() const { return constant_data == nullptr; }
 
   // This must be a shared_ptr. If the data is used for visualization while the
   // node is being trimmed, it must survive until all use finishes.
   std::shared_ptr<const Data> constant_data;
 
-  transform::Rigid3d pose;
+  // The node pose in the global SLAM frame.
+  transform::Rigid3d global_pose;
 };
 
-proto::TrajectoryNode ToProto(const TrajectoryNode::Data& constant_data);
-TrajectoryNode::Data FromProto(const proto::TrajectoryNode& proto);
+proto::TrajectoryNodeData ToProto(const TrajectoryNode::Data& constant_data);
+TrajectoryNode::Data FromProto(const proto::TrajectoryNodeData& proto);
 
 }  // namespace mapping
 }  // namespace cartographer

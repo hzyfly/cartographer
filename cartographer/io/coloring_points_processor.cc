@@ -17,7 +17,7 @@
 #include "cartographer/io/coloring_points_processor.h"
 
 #include "Eigen/Core"
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "glog/logging.h"
 
 namespace cartographer {
@@ -27,18 +27,18 @@ std::unique_ptr<ColoringPointsProcessor>
 ColoringPointsProcessor::FromDictionary(
     common::LuaParameterDictionary* const dictionary,
     PointsProcessor* const next) {
-  const string frame_id = dictionary->GetString("frame_id");
+  const std::string frame_id = dictionary->GetString("frame_id");
   const std::vector<double> color_values =
       dictionary->GetDictionary("color")->GetArrayValuesAsDoubles();
   const Uint8Color color = {{static_cast<uint8>(color_values[0]),
                              static_cast<uint8>(color_values[1]),
                              static_cast<uint8>(color_values[2])}};
-  return common::make_unique<ColoringPointsProcessor>(ToFloatColor(color),
-                                                      frame_id, next);
+  return absl::make_unique<ColoringPointsProcessor>(ToFloatColor(color),
+                                                    frame_id, next);
 }
 
 ColoringPointsProcessor::ColoringPointsProcessor(const FloatColor& color,
-                                                 const string& frame_id,
+                                                 const std::string& frame_id,
                                                  PointsProcessor* const next)
     : color_(color), frame_id_(frame_id), next_(next) {}
 

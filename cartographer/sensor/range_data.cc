@@ -31,41 +31,69 @@ RangeData TransformRangeData(const RangeData& range_data,
   };
 }
 
-RangeData CropRangeData(const RangeData& range_data, const float min_z,
-                        const float max_z) {
-  return RangeData{range_data.origin, Crop(range_data.returns, min_z, max_z),
-                   Crop(range_data.misses, min_z, max_z)};
+TimedRangeData TransformTimedRangeData(const TimedRangeData& range_data,
+                                       const transform::Rigid3f& transform) {
+  return TimedRangeData{
+      transform * range_data.origin,
+      TransformTimedPointCloud(range_data.returns, transform),
+      TransformTimedPointCloud(range_data.misses, transform),
+  };
 }
 
-proto::CompressedRangeData ToProto(
-    const CompressedRangeData& compressed_range_data) {
-  proto::CompressedRangeData proto;
-  *proto.mutable_origin() = transform::ToProto(compressed_range_data.origin);
-  *proto.mutable_returns() = compressed_range_data.returns.ToProto();
-  *proto.mutable_misses() = compressed_range_data.misses.ToProto();
+RangeData CropRangeData(const RangeData& range_data, const float min_z,
+                        const float max_z) {
+  return RangeData{range_data.origin,
+                   CropPointCloud(range_data.returns, min_z, max_z),
+                   CropPointCloud(range_data.misses, min_z, max_z)};
+}
+
+TimedRangeData CropTimedRangeData(const TimedRangeData& range_data,
+                                  const float min_z, const float max_z) {
+  return TimedRangeData{range_data.origin,
+                        CropTimedPointCloud(range_data.returns, min_z, max_z),
+                        CropTimedPointCloud(range_data.misses, min_z, max_z)};
+}
+
+proto::RangeData ToProto(const RangeData& range_data) {
+  proto::RangeData proto;
+  *proto.mutable_origin() = transform::ToProto(range_data.origin);
+  proto.mutable_returns()->Reserve(range_data.returns.size());
+  for (const RangefinderPoint& point : range_data.returns) {
+    *proto.add_returns() = ToProto(point);
+  }
+  proto.mutable_misses()->Reserve(range_data.misses.size());
+  for (const RangefinderPoint& point : range_data.misses) {
+    *proto.add_misses() = ToProto(point);
+  }
   return proto;
 }
 
-CompressedRangeData FromProto(const proto::CompressedRangeData& proto) {
-  return CompressedRangeData{
-      transform::ToEigen(proto.origin()),
-      CompressedPointCloud(proto.returns()),
-      CompressedPointCloud(proto.misses()),
-  };
-}
-
-CompressedRangeData Compress(const RangeData& range_data) {
-  return CompressedRangeData{
-      range_data.origin,
-      CompressedPointCloud(range_data.returns),
-      CompressedPointCloud(range_data.misses),
-  };
-}
-
-RangeData Decompress(const CompressedRangeData& compressed_range_data) {
-  return RangeData{compressed_range_data.origin,
-                   compressed_range_data.returns.Decompress(),
-                   compressed_range_data.misses.Decompress()};
+RangeData FromProto(const proto::RangeData& proto) {
+  PointCloud returns;
+  if (proto.returns_size() > 0) {
+    returns.reserve(proto.returns().size());
+    for (const auto& point_proto : proto.returns()) {
+      returns.push_back(FromProto(point_proto));
+    }
+  } else {
+    returns.reserve(proto.returns_legacy().size());
+    for (const auto& point_proto : proto.returns_legacy()) {
+      returns.push_back({transform::ToEigen(point_proto)});
+    }
+  }
+  PointCloud misses;
+  if (proto.misses_size() > 0) {
+    misses.reserve(proto.misses().size());
+    for (const auto& point_proto : proto.misses()) {
+      misses.push_back(FromProto(point_proto));
+    }
+  } else {
+    misses.reserve(proto.misses_legacy().size());
+    for (const auto& point_proto : proto.misses_legacy()) {
+      misses.push_back({transform::ToEigen(point_proto)});
+    }
+  }
+  return RangeData{transform::ToEigen(proto.origin()), returns, misses};
 }
 
 }  // namespace sensor

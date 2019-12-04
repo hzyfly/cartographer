@@ -29,7 +29,7 @@ namespace cartographer {
 namespace sensor {
 
 // A compressed representation of a point cloud consisting of a collection of
-// points (Vector3f).
+// points (Vector3f) without time information.
 // Internally, points are grouped by blocks. Each block encodes a bit of meta
 // data (number of points in block, coordinates of the block) and encodes each
 // point with a fixed bit rate in relation to the block.
@@ -58,9 +58,14 @@ class CompressedPointCloud {
 };
 
 // Forward iterator for compressed point clouds.
-class CompressedPointCloud::ConstIterator
-    : public std::iterator<std::forward_iterator_tag, Eigen::Vector3f> {
+class CompressedPointCloud::ConstIterator {
  public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = RangefinderPoint;
+  using difference_type = int64;
+  using pointer = const RangefinderPoint*;
+  using reference = const RangefinderPoint&;
+
   // Creates begin iterator.
   explicit ConstIterator(const CompressedPointCloud* compressed_point_cloud);
 
@@ -68,7 +73,7 @@ class CompressedPointCloud::ConstIterator
   static ConstIterator EndIterator(
       const CompressedPointCloud* compressed_point_cloud);
 
-  Eigen::Vector3f operator*() const;
+  RangefinderPoint operator*() const;
   ConstIterator& operator++();
   bool operator!=(const ConstIterator& it) const;
 

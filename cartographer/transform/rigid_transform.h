@@ -17,11 +17,13 @@
 #ifndef CARTOGRAPHER_TRANSFORM_RIGID_TRANSFORM_H_
 #define CARTOGRAPHER_TRANSFORM_RIGID_TRANSFORM_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
 
 #include "Eigen/Core"
 #include "Eigen/Geometry"
+#include "absl/strings/substitute.h"
 #include "cartographer/common/lua_parameter_dictionary.h"
 #include "cartographer/common/math.h"
 #include "cartographer/common/port.h"
@@ -75,16 +77,9 @@ class Rigid2 {
     return Rigid2(translation, rotation);
   }
 
-  string DebugString() const {
-    string out;
-    out.append("{ t: [");
-    out.append(std::to_string(translation().x()));
-    out.append(", ");
-    out.append(std::to_string(translation().y()));
-    out.append("], r: [");
-    out.append(std::to_string(rotation().angle()));
-    out.append("] }");
-    return out;
+  std::string DebugString() const {
+    return absl::Substitute("{ t: [$0, $1], r: [$2] }", translation().x(),
+                            translation().y(), rotation().angle());
   }
 
  private:
@@ -143,6 +138,13 @@ class Rigid3 {
     return Rigid3(vector, Quaternion::Identity());
   }
 
+  static Rigid3 FromArrays(const std::array<FloatType, 4>& rotation,
+                           const std::array<FloatType, 3>& translation) {
+    return Rigid3(Eigen::Map<const Vector>(translation.data()),
+                  Eigen::Quaternion<FloatType>(rotation[0], rotation[1],
+                                               rotation[2], rotation[3]));
+  }
+
   static Rigid3<FloatType> Identity() { return Rigid3<FloatType>(); }
 
   template <typename OtherType>
@@ -160,24 +162,17 @@ class Rigid3 {
     return Rigid3(translation, rotation);
   }
 
-  string DebugString() const {
-    string out;
-    out.append("{ t: [");
-    out.append(std::to_string(translation().x()));
-    out.append(", ");
-    out.append(std::to_string(translation().y()));
-    out.append(", ");
-    out.append(std::to_string(translation().z()));
-    out.append("], q: [");
-    out.append(std::to_string(rotation().w()));
-    out.append(", ");
-    out.append(std::to_string(rotation().x()));
-    out.append(", ");
-    out.append(std::to_string(rotation().y()));
-    out.append(", ");
-    out.append(std::to_string(rotation().z()));
-    out.append("] }");
-    return out;
+  std::string DebugString() const {
+    return absl::Substitute("{ t: [$0, $1, $2], q: [$3, $4, $5, $6] }",
+                            translation().x(), translation().y(),
+                            translation().z(), rotation().w(), rotation().x(),
+                            rotation().y(), rotation().z());
+  }
+
+  bool IsValid() const {
+    return !std::isnan(translation_.x()) && !std::isnan(translation_.y()) &&
+           !std::isnan(translation_.z()) &&
+           std::abs(FloatType(1) - rotation_.norm()) < FloatType(1e-3);
   }
 
  private:

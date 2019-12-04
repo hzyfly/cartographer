@@ -19,6 +19,7 @@
 #include <tuple>
 #include <vector>
 
+#include "cartographer/sensor/internal/test_helpers.h"
 #include "gmock/gmock.h"
 
 namespace cartographer {
@@ -26,14 +27,6 @@ namespace sensor {
 namespace {
 
 using ::testing::Contains;
-
-MATCHER(NearPointwise, std::string(negation ? "Doesn't" : "Does") + " match.") {
-  return std::get<0>(arg).isApprox(std::get<1>(arg), 0.001f);
-}
-
-MATCHER_P(Near, point, std::string(negation ? "Doesn't" : "Does") + " match.") {
-  return arg.isApprox(point, 0.001f);
-}
 
 class RangeDataTest : public ::testing::Test {
  protected:
@@ -47,31 +40,6 @@ class RangeDataTest : public ::testing::Test {
   std::vector<Eigen::Vector3f> returns_;
   std::vector<Eigen::Vector3f> misses_;
 };
-
-TEST_F(RangeDataTest, Compression) {
-  const RangeData expected_data = {origin_, returns_, misses_};
-  const RangeData actual_data = Decompress(Compress(expected_data));
-  EXPECT_THAT(expected_data.origin, Near(actual_data.origin));
-  EXPECT_EQ(3, actual_data.returns.size());
-  EXPECT_EQ(1, actual_data.misses.size());
-
-  // Returns may be reordered, so we compare in an unordered manner.
-  for (const auto& expected : expected_data.returns) {
-    EXPECT_THAT(actual_data.returns, Contains(Near(expected)));
-  }
-  for (const auto& expected : expected_data.misses) {
-    EXPECT_THAT(actual_data.misses, Contains(Near(expected)));
-  }
-}
-
-TEST_F(RangeDataTest, CompressedRangeDataToAndFromProto) {
-  const auto expected = CompressedRangeData{
-      origin_, CompressedPointCloud(returns_), CompressedPointCloud(misses_)};
-  const auto actual = FromProto(ToProto(expected));
-  EXPECT_THAT(expected.origin, Near(actual.origin));
-  EXPECT_EQ(expected.returns, actual.returns);
-  EXPECT_EQ(expected.misses, actual.misses);
-}
 
 }  // namespace
 }  // namespace sensor
